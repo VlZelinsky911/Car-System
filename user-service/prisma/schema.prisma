@@ -1,0 +1,46 @@
+generator client {
+  provider      = "prisma-client-js"
+  binaryTargets = ["native"]
+	output   = "../generated/user-client"
+}
+
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id                 Int       @id @default(autoincrement())
+  email              String    @unique
+  name               String?
+  passwordHash       String
+
+  emailVerifiedAt    DateTime?
+  verificationToken  String?   
+  verificationExp    DateTime?
+
+  resetToken         String?   
+  resetExp           DateTime?
+
+  role               Role      @default(USER)
+  status             UserStatus @default(ACTIVE)
+
+  lastLoginAt        DateTime?
+  createdAt          DateTime  @default(now())
+  updatedAt          DateTime  @updatedAt
+
+  @@index([status])
+  @@index([emailVerifiedAt])
+}
+
+enum Role {
+  USER
+  ADMIN
+}
+
+enum UserStatus {
+  ACTIVE
+  BLOCKED
+  PENDING
+}

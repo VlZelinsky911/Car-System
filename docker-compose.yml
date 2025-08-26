@@ -1,0 +1,79 @@
+services:
+  postgres:
+    image: postgres:16
+    environment:
+      POSTGRES_USER: app
+      POSTGRES_PASSWORD: app
+      POSTGRES_DB: maindb
+    ports: ["5435:5432"]
+    volumes: [pgdata:/var/lib/postgresql/data]
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U app -d maindb"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  rabbitmq:
+    image: rabbitmq:3-management
+    ports: ["5672:5672","15672:15672"]
+    healthcheck:
+      test: ["CMD-SHELL", "rabbitmq-diagnostics -q ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  user-service:
+    build:
+      context: ./user-service
+    ports: ["3001:3001"]
+    environment:
+      DATABASE_URL: postgres://app:app@postgres:5432/maindb?schema=user
+      RABBITMQ_URL: amqp://guest:guest@rabbitmq:5672
+      NODE_ENV: development
+      PORT: 3001
+    depends_on:
+      postgres:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fsS http://localhost:3001/health || exit 1"]
+      interval: 10s
+      timeout: 3s
+      retries: 10
+    
+  vehicle-service:
+    build:
+      context: ./vehicle-service
+    ports: ["3002:3002"]
+    environment:
+      DATABASE_URL: postgres://app:app@postgres:5432/maindb?schema=vehicle
+      RABBITMQ_URL: amqp://guest:guest@rabbitmq:5672
+      NODE_ENV: development
+      PORT: 3002
+    depends_on:
+      postgres:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fsS http://localhost:3002/health || exit 1"]
+      interval: 10s
+      timeout: 3s
+      retries: 10
+
+  frontend:
+    build:
+      context: ./frontend
+    ports: ["3000:3000"]
+    environment:
+      VITE_USER_API_URL: http://localhost:3001
+      VITE_VEHICLE_API_URL: http://localhost:3002
+    depends_on:
+      user-service:
+        condition: service_started
+      vehicle-service:
+        condition: service_started
+
+volumes:
+  pgdata:

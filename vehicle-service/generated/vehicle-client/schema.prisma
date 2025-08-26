@@ -1,0 +1,25 @@
+generator client {
+  provider      = "prisma-client-js"
+  binaryTargets = ["native"]
+  output        = "../generated/vehicle-client"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Vehicle {
+  id          Int     @id @default(autoincrement())
+  make        String
+  model       String
+  year        Int?
+  userId      Int
+  placeholder Boolean @default(false)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([userId, placeholder])
+  @@index([userId])
+}
