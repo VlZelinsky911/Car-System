@@ -67,8 +67,8 @@ services:
       context: ./frontend
     ports: ["3000:3000"]
     environment:
-      VITE_USER_API_URL: http://localhost:3001
-      VITE_VEHICLE_API_URL: http://localhost:3002
+      VITE_USER_API_URL: http://18.205.70.134:3001
+      VITE_VEHICLE_API_URL: http://18.205.70.134:3002
     depends_on:
       user-service:
         condition: service_started
